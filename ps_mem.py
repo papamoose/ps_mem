@@ -72,7 +72,7 @@
 #
 # FreeBSD is supported if linprocfs is mounted at /compat/linux/proc/
 # FreeBSD 8.0 supports up to a level of Linux 2.6.16
-
+import json
 import argparse
 import errno
 import os
@@ -567,27 +567,11 @@ def print_header(show_swap, discriminate_by_pid):
 
 def print_memory_usage(sorted_cmds, shareds, count, total, swaps, total_swap,
                        show_swap):
+    a = {}
     for cmd in sorted_cmds:
+        a[cmd[0]] = { "count": count[cmd[0]], "private": cmd[1]-shareds[cmd[0]], "shared": shareds[cmd[0]], "ram_used": cmd[1] }
 
-        output_string = "%9s + %9s = %9s"
-        output_data = (human(cmd[1]-shareds[cmd[0]]),
-                       human(shareds[cmd[0]]), human(cmd[1]))
-        if show_swap:
-            output_string += "   %9s"
-            output_data += (human(swaps[cmd[0]]),)
-        output_string += "\t%s\n"
-        output_data += (cmd_with_count(cmd[0], count[cmd[0]]),)
-
-        sys.stdout.write(output_string % output_data)
-
-    # Only show totals if appropriate
-    if have_swap_pss and show_swap:  # kernel will have_pss
-        sys.stdout.write("%s\n%s%9s%s%9s\n%s\n" %
-                         ("-" * 45, " " * 24, human(total), " " * 3,
-                          human(total_swap), "=" * 45))
-    elif have_pss:
-        sys.stdout.write("%s\n%s%9s\n%s\n" %
-                         ("-" * 33, " " * 24, human(total), "=" * 33))
+    print(json.dumps(a, indent=2))
 
 
 def verify_environment(pids_to_show):
